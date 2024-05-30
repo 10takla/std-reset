@@ -1,0 +1,13 @@
+[package]
+authors = ["10takla <https://github.com/10takla>"]
+description = "Many reworked implementations from the standard library, as well as new solutions for easy coding."
+edition = "2018"
+name = "std-reset"
+version = "0.1.0"
+license = "MIT"
+keywords = ["std", "reset"]
+repository = "https://github.com/10takla/std-reset"
+
+[dependencies]
+paste = "1.0.15"
+std-reset-macros = "0.1.0"
