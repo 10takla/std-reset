@@ -1,13 +1,19 @@
 [package]
 authors = ["10takla <https://github.com/10takla>"]
 description = "Many reworked implementations from the standard library, as well as new solutions for easy coding."
-edition = "2018"
+edition = "2021"
 name = "std-reset"
-version = "0.1.0"
+version = "0.1.1"
 license = "MIT"
 keywords = ["std", "reset"]
 repository = "https://github.com/10takla/std-reset"
 
 [dependencies]
+std-reset-macros = {version = "0.1.1", path = "macros"}
 paste = "1.0.15"
-std-reset-macros = "0.1.0"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[workspace]
+members = ["macros"]
