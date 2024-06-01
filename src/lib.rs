@@ -5,5 +5,5 @@ pub mod prelude {
         as_prim::AsPrim,
         of_to::{Of, To},
     };
-    pub use std_reset_macros::Default;
+    pub use std_reset_macros::{Default, Deref, Setter, Getter};
 }
