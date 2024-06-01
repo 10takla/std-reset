@@ -2,21 +2,22 @@
 
 mod shared;
 
+use paste::paste;
 use proc_macro::TokenStream;
 use quote::quote;
 use shared::{get_segment_from_type, tmp};
-use syn::{parse_macro_input, Field, Fields, FieldsNamed, ItemStruct, PathSegment};
+use syn::{parse_macro_input, Field, Fields, FieldsNamed, FieldsUnnamed, ItemStruct, PathSegment};
 
 /// Реализация трейта [`Default`] с указанием значений по умолчанию для каждого поля структуры.
 ///
 /// Макрос поддерживает работу с именованными и неименнованными структурами.
 ///
-/// Чтобы указать дефолтное значение поля необходимо использовать атрибут `default_field` и следующий синтаксис с ним:
+/// Чтобы указать дефолтное значение поля необходимо использовать атрибут `default` и следующий синтаксис с ним:
 /// ```
 /// # use std_reset_macros::Default;
 /// # #[derive(Debug, Default, PartialEq)]
 /// # struct Wrap(
-/// #[default_field("10_i32")]
+/// #[default("10_i32")]
 /// #   i32
 /// # );
 /// ```
@@ -25,13 +26,13 @@ use syn::{parse_macro_input, Field, Fields, FieldsNamed, ItemStruct, PathSegment
 /// P.s. Выражение необходимо записывать в виде строки, потому что`rust` требует
 /// указывать в атрибутах только литерал. Поэтому под капотом
 /// [`Default`] преобразует [cтроковый лиетрал](https://doc.rust-lang.org/reference/tokens.html?highlight=literal#string-literals) в выржаение.
-/// 
+///
 /// Например для того, чтобы указать дефолтное значение для поля с типом `&str` необходимо написать следующее:
 /// ```
 /// # use std_reset_macros::Default;
 /// # #[derive(Debug, Default, PartialEq)]
 /// # struct Wrap(
-/// #[default_field("\"crab\"")]
+/// #[default("\"crab\"")]
 /// #   &'static str
 /// # );
 /// ```
@@ -44,14 +45,14 @@ use syn::{parse_macro_input, Field, Fields, FieldsNamed, ItemStruct, PathSegment
 ///
 /// #[derive(Debug, Default, PartialEq)]
 /// struct User {
-///     #[default_field("String::from(\"Ferris\")")]
+///     #[default("String::from(\"Ferris\")")]
 ///     name: String,
-///     #[default_field("String::from(\"123FerF\")")]
+///     #[default("String::from(\"123FerF\")")]
 ///     password: String,
-///     #[default_field("8_9999_999_999")]
+///     #[default("8_9999_999_999")]
 ///     number: u128,
 ///     email: Option<String>,
-///     #[default_field("Some(32)")]
+///     #[default("Some(32)")]
 ///     age: Option<u32>,
 /// }
 ///
@@ -72,11 +73,11 @@ use syn::{parse_macro_input, Field, Fields, FieldsNamed, ItemStruct, PathSegment
 /// #
 /// #[derive(Debug, Default, PartialEq)]
 /// struct User(
-///     #[default_field("String::from(\"Ferris\")")] String,
-///     #[default_field("String::from(\"123FerF\")")] String,
-///     #[default_field("8_9999_999_999")] u128,
+///     #[default("String::from(\"Ferris\")")] String,
+///     #[default("String::from(\"123FerF\")")] String,
+///     #[default("8_9999_999_999")] u128,
 ///     Option<String>,
-///     #[default_field("Some(32)")] Option<u32>,
+///     #[default("Some(32)")] Option<u32>,
 /// );
 ///
 /// assert_eq!(
@@ -90,63 +91,162 @@ use syn::{parse_macro_input, Field, Fields, FieldsNamed, ItemStruct, PathSegment
 ///     )
 /// );
 /// ```
-
-#[proc_macro_derive(Default, attributes(default_field))]
+#[proc_macro_derive(Default, attributes(default))]
 pub fn default_macro_derive(input: TokenStream) -> TokenStream {
-    let ItemStruct { ident, fields, .. } = parse_macro_input!(input);
-    let get_default_value = |field: &Field| {
-        let Field { ty, .. } = field;
-        field
-            .attrs
-            .iter()
-            .find_map(|attr| {
-                if attr.path.is_ident("default_field") {
-                    attr.parse_args::<syn::LitStr>()
-                        .map(|default_value| {
-                            default_value
-                                .value()
-                                .parse::<proc_macro2::TokenStream>()
-                                .expect("Failed to parse tokens")
-                        })
-                        .ok()
-                } else {
-                    None
-                }
-            })
-            .unwrap_or_else(|| {
-                quote! { <#ty as std::default::Default>::default() }
-            })
-    };
-    let body = match fields {
-        Fields::Named(_) => {
-            let field_defaults = fields.iter().map(|field| {
-                let Field { ident, .. } = field;
-                let default_value = get_default_value(field);
-                quote! {
-                    #ident: #default_value
-                }
-            });
-            quote! {
-                {
-                    #(#field_defaults),*
-                }
-            }
-        }
-        Fields::Unnamed(_) => {
-            let field_defaults = fields.iter().map(|field| get_default_value(field));
-            quote! {
-                (#(#field_defaults),*)
-            }
-        }
-        _ => panic!("Struct must have named or unnamed fields"),
-    };
+    default::expand(input)
+}
+mod default;
 
-    quote! {
-        impl std::default::Default for #ident {
-            fn default() -> Self {
-                Self #body
-            }
-        }
-    }
-    .into()
+/// Реализация [`Deref`] и [`DerefMut`](https://doc.rust-lang.org/std/ops/trait.DerefMut.html) для структуры
+///
+/// Макрос поддерживает работу с именованными и неименнованными структурами.
+///
+/// # Реализация с одним неименованным полем
+/// Дефолтная реализация макроса без дополнительных указаний работает с только с одним неименованым полем.
+/// При разименовании типа будет возвращены данные этого поле.
+/// ```
+/// use std_reset_macros::Deref;
+///
+/// #[derive(Deref)]
+/// struct Wrapper(pub Vec<i32>);
+///
+/// let mut wrapper = Wrapper(vec![1, 2, 3]);
+/// assert_eq!(*wrapper, vec![1, 2, 3]);
+/// ```
+/// # Реализация с множеством неименованных полей
+/// Когда появляется несколько полей, макросу необходимо указать конретное поле,
+/// которое будет возвращено после разыменования с помощью атрибуте `#[deref]`
+/// ```
+/// # use std_reset_macros::Deref;
+/// #
+/// #[derive(Deref)]
+/// struct Wrapper(pub Vec<i32>, #[deref] pub String);
+/// 
+/// let mut wrapper = Wrapper(vec![1, 2, 3], String::from("crab"));
+/// assert_eq!(*wrapper, "crab");
+/// ```
+/// # Реализация с множеством именованных полей
+/// Тоже самое работает и с именованными полями
+/// ```
+/// # use std_reset_macros::Deref;
+/// #
+/// #[derive(Deref)]
+/// struct Wrapper {
+///     pub first: Vec<i32>,
+///     #[deref]
+///     pub second: String,
+/// }
+///
+/// let mut wrapper = Wrapper {
+///     first: vec![1, 2, 3],
+///     second: String::from("crab"),
+/// };
+/// assert_eq!(*wrapper, "crab");
+/// ```
+
+#[proc_macro_derive(Deref, attributes(deref))]
+pub fn deref_macro_derive(input: TokenStream) -> TokenStream {
+    deref::expand(input)
+}
+mod deref;
+
+/// Автоопределение `set` методов для полей именованых структур.
+/// 
+/// По умолчанию все поля включены в определение `set_` методов.
+/// Также с помощью атрибутов можно опционально исключать поля из определния `set_` методов,
+/// а также включать:
+/// - Аттрибут `exclude_setter` исключает поле из тех, что опредлены по умолчанию
+/// - Аттрибут `include_setter` заставляет макрос определять метод `set_` только для полей с этим атрибутом.
+/// 
+/// # Конфликты атрибутов
+/// - Поле не может иметь одновременно исключающее и включающее поле, они противоречат работе друг друго;
+/// - Поле не может имет исключающее поле, если какое-либо поле до него было определено включающим, и наоборот.
+/// 
+/// # Реализация по умолчанию
+/// ```
+/// use std_reset_macros::Setter;
+/// 
+/// #[derive(Setter, Clone, Copy, Default, PartialEq, Debug)]
+/// struct Tmp {
+///     first: i32,
+///     second: i32,
+/// }
+/// let tmp = Tmp::default().set_first(2).set_second(3);
+/// assert_eq!(
+///     tmp,
+///     Tmp {
+///         first: 2,
+///         second: 3
+///     }
+/// );
+/// ```
+/// 
+/// # Исключающие поля
+/// 
+/// C помощью атрибута `exclude_setter` можно исключить поле из определения `set_` метода,
+/// таким образом метод будет определен только для дефолтных полей.
+/// ## Пример
+/// ```
+/// # use std_reset_macros::Setter;
+/// #[derive(Setter, Clone, Copy, Default, PartialEq, Debug)]
+/// struct Tmp {
+///     first: i32,
+///     #[exclude_setter]
+///     second: i32,
+/// }
+/// # let tmp = Tmp::default().set_first(2);
+/// # assert_eq!(
+/// #     tmp,
+/// #     Tmp {
+/// #         first: 2,
+/// #         second: 0
+/// #     }
+/// # );
+/// ```
+/// -- здесь метод `set_` определен только для поля `first`.
+/// 
+/// # Включающие поля
+/// 
+/// Если есть хотябы одно поле с атрибутом `include_setter`, это значит,
+/// что макрос перестает опрделеять методы `set_` для полей по умолчанию,
+/// а начал назначать их для полей с атрибутом `include_setter`.
+/// ## Пример
+/// ```
+/// # use std_reset_macros::Setter;
+/// #[derive(Setter, Clone, Copy, Default, PartialEq, Debug)]
+/// struct Tmp {
+///     #[include_setter]
+///     first: i32,
+///     second: i32,
+///     #[include_setter]    
+///     third: i32
+/// }
+/// # let tmp = Tmp::default().set_first(2).set_third(5);
+/// # assert_eq!(
+/// #     tmp,
+/// #     Tmp {
+/// #         first: 2,
+/// #         second: 0,
+/// #         third: 5
+/// #     }
+/// # );
+/// ```
+/// -- здесь метод `set_` определен только для полей `first` и `third`.
+/// 
+/// 
+/// 
+#[proc_macro_derive(Setter, attributes(exclude_setter, include_setter))]
+pub fn setter_macro_derive(input: TokenStream) -> TokenStream {
+    setter_getter::expand_setter(input)
+}
+mod setter_getter;
+
+/// Автоопределение `get` методов для полей именованых структур.
+/// Тоже самое что и в [`Setter`], но:
+/// - вместо аттрибута `exclude_setter` - `exclude_getter`
+/// - вместо аттрибута `include_setter` - `include_getter`
+/// - вместо `set_` метода - `get_`
+#[proc_macro_derive(Getter, attributes(exclude_getter, include_getter))]
+pub fn getter_macro_derive(input: TokenStream) -> TokenStream {
+    setter_getter::expand_getter(input)
 }
