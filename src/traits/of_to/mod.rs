@@ -67,8 +67,8 @@
 //!     let dollars = Euros.to::<Dollars>();
 //! }
 //! ```
-pub trait Of<F>: To {
-    fn of(value: F) -> Self;
+pub trait Of<F, Output = Self>: To {
+    fn of(value: F) -> Output;
 }
 
 pub trait To {
@@ -80,5 +80,24 @@ pub trait To {
 impl<F> To for F {
     fn to<I: Of<F>>(self) -> I {
         I::of(self)
+    }
+}
+
+
+impl<F, I> Of<Vec<F>> for Vec<I>
+where
+    I: Of<F>,
+{
+    fn of(vec: Vec<F>) -> Self {
+        vec.into_iter().map(I::of).collect()
+    }
+}
+
+impl<F: Clone, I> Of<&Vec<F>> for Vec<I>
+where
+    I: Of<F>,
+{
+    fn of(vec: &Vec<F>) -> Self {
+        vec.into_iter().cloned().map(I::of).collect()
     }
 }
