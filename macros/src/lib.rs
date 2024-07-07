@@ -16,9 +16,10 @@ use syn::{parse_macro_input, Field, Fields, FieldsNamed, FieldsUnnamed, ItemStru
 /// ```
 /// # use std_reset_macros::Default;
 /// # #[derive(Debug, Default, PartialEq)]
-/// # struct Wrap(
+/// # struct Wrap<T>(
 /// #[default("10_i32")]
-/// #   i32
+/// #   i32,
+///     T
 /// # );
 /// ```
 /// -- выражение, которое будет подставляться в поле как его дефолтное значение указывается внутри скобок и описан как строковый литерал.
@@ -270,7 +271,7 @@ pub fn getter_macro_derive(input: TokenStream) -> TokenStream {
 /// #[derive(New)]
 /// struct Tmp<T>(T, i32) where T: Default;
 ///
-/// Tmp::new((2, 3));
+/// Tmp::new(2, 3);
 /// ```
 /// ```
 /// # use std_reset_macros::New;
