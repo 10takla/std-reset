@@ -1,4 +1,4 @@
-use crate::shared::{get_segment_from_type, tmp};
+use crate::shared::{get_segment_from_type, type_from_args};
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::{parse_macro_input, Field, Fields, FieldsNamed, FieldsUnnamed, ItemStruct, PathSegment};
@@ -10,7 +10,7 @@ pub fn expand(input: TokenStream) -> TokenStream {
         generics,
         ..
     } = parse_macro_input!(input);
-    let (impl_generics, ty_generics, _) = generics.split_for_impl();
+    let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
 
     let (field, pos) = match fields {
         Fields::Unnamed(FieldsUnnamed { unnamed, .. }) => {
@@ -31,7 +31,10 @@ pub fn expand(input: TokenStream) -> TokenStream {
             } else {
                 0
             };
-            (unnamed[pos].clone(), quote! {#pos})
+            (unnamed[pos].clone(), {
+                let pos = syn::Index::from(pos);
+                quote! {#pos}
+            })
         }
         Fields::Named(FieldsNamed { named, .. }) => {
             let deref_fields = named
@@ -50,8 +53,9 @@ pub fn expand(input: TokenStream) -> TokenStream {
         _ => panic!(),
     };
     let Field { ty, .. } = field.clone();
+
     quote! {
-        impl #impl_generics std::ops::Deref for #ident #ty_generics {
+        impl #impl_generics std::ops::Deref for #ident #ty_generics #where_clause {
             type Target = #ty;
 
             fn deref(&self) -> &Self::Target {
@@ -59,7 +63,7 @@ pub fn expand(input: TokenStream) -> TokenStream {
             }
         }
 
-        impl #impl_generics std::ops::DerefMut for #ident #ty_generics {
+        impl #impl_generics std::ops::DerefMut for #ident #ty_generics #where_clause {
             fn deref_mut(&mut self) -> &mut Self::Target {
                 &mut self. #pos
             }

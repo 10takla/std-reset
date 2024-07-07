@@ -5,13 +5,15 @@ use syn::{
     parse_macro_input, Field, Fields, FieldsNamed, FieldsUnnamed, Ident, ItemStruct, PathSegment,
     Type,
 };
+use crate::shared::fast_impl;
 
 pub fn expand(
     input: TokenStream,
     attr_prefix: &str,
     impl_: impl Fn(&Type, &Option<Ident>, Ident) -> proc_macro2::TokenStream,
 ) -> TokenStream {
-    let ItemStruct { fields, ident, .. } = parse_macro_input!(input);
+    let struct_ = &parse_macro_input!(input);
+    let ItemStruct { fields, ident, generics, .. } = struct_;
     let Fields::Named(FieldsNamed { named: fields, .. }) = fields else {
         panic!("Only works on structs with named fields");
     };
@@ -71,12 +73,7 @@ pub fn expand(
 
     let methods = acc_every.into_iter();
 
-    quote! {
-        impl #ident {
-            #(#methods)*
-        }
-    }
-    .into()
+    fast_impl(struct_, quote!(#(#methods)*)).into()
 }
 
 pub fn expand_setter(input: TokenStream) -> TokenStream {

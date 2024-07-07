@@ -5,7 +5,7 @@ mod shared;
 use paste::paste;
 use proc_macro::TokenStream;
 use quote::quote;
-use shared::{get_segment_from_type, tmp};
+use shared::{get_segment_from_type, type_from_args};
 use syn::{parse_macro_input, Field, Fields, FieldsNamed, FieldsUnnamed, ItemStruct, PathSegment};
 
 /// Реализация трейта [`Default`] с указанием значений по умолчанию для каждого поля структуры.
@@ -24,7 +24,7 @@ use syn::{parse_macro_input, Field, Fields, FieldsNamed, FieldsUnnamed, ItemStru
 /// -- выражение, которое будет подставляться в поле как его дефолтное значение указывается внутри скобок и описан как строковый литерал.
 ///
 /// **P.s.** Выражение описывается строке, потому что`rust` требует
-/// указывать в атрибутах только литералы. Макрос [`Default`] в свою очередь 
+/// указывать в атрибутах только литералы. Макрос [`Default`] в свою очередь
 /// преобразует [cтроковый лиетрал](https://doc.rust-lang.org/reference/tokens.html?highlight=literal#string-literals) в выржаение.
 ///
 /// Например, указать дефолтное значение для поля с типом `&str` можно следующим образом:
@@ -103,7 +103,7 @@ mod default;
 ///
 /// # Реализация с одним неименованным полем
 /// Дефолтная реализация макроса без дополнительных указаний работает только с одним неименованым полем.
-/// При разименовании структуры будет возвращены данные этого поле.
+/// При разименовании структуры будет возвращены данные этого поля.
 /// ```
 /// use std_reset_macros::Deref;
 ///
@@ -121,7 +121,7 @@ mod default;
 /// #
 /// #[derive(Deref)]
 /// struct Wrapper(pub Vec<i32>, #[deref] pub String);
-/// 
+///
 /// let mut wrapper = Wrapper(vec![1, 2, 3], String::from("crab"));
 /// assert_eq!(*wrapper, "crab");
 /// ```
@@ -151,21 +151,21 @@ pub fn deref_macro_derive(input: TokenStream) -> TokenStream {
 mod deref;
 
 /// Автоопределение `set` методов для полей именованых структур.
-/// 
+///
 /// По умолчанию все поля включены в определение `set_` методов.
 /// Также с помощью атрибутов можно опционально исключать полe из определния `set_` метода,
 /// а также включать.
 /// - Аттрибут `exclude_setter` исключает поле из полей по умолчанию;
 /// - Аттрибут `include_setter` заставляет макрос определять метод `set_` только для полей с этим атрибутом.
-/// 
+///
 /// # Конфликты атрибутов
 /// - Поле не может иметь одновременно исключающее и включающее поле, они препятсвуют работе друг друга;
 /// - Поле не может быть исключающим, если какое-либо поле до него было определено как включающее, и наоборот.
-/// 
+///
 /// # Реализация по умолчанию
 /// ```
 /// use std_reset_macros::Setter;
-/// 
+///
 /// #[derive(Setter, Clone, Copy, Default, PartialEq, Debug)]
 /// struct Tmp {
 ///     first: i32,
@@ -180,9 +180,9 @@ mod deref;
 ///     }
 /// );
 /// ```
-/// 
+///
 /// # Исключающие поля
-/// 
+///
 /// C помощью атрибута `exclude_setter` можно исключить поле из определения `set_` метода,
 /// таким образом метод будет определен только для дефолтных полей.
 /// ## Пример
@@ -204,9 +204,9 @@ mod deref;
 /// # );
 /// ```
 /// -- здесь метод `set_` определен только для поля `first`.
-/// 
+///
 /// # Включающие поля
-/// 
+///
 /// Если есть хотябы одно поле с атрибутом `include_setter`, это значит,
 /// что макрос перестает опрделеять методы `set_` для полей по умолчанию,
 /// а начал назначать их для полей с атрибутом `include_setter`.
@@ -232,9 +232,9 @@ mod deref;
 /// # );
 /// ```
 /// -- здесь метод `set_` определен только для полей `first` и `third`.
-/// 
-/// 
-/// 
+///
+///
+///
 #[proc_macro_derive(Setter, attributes(exclude_setter, include_setter))]
 pub fn setter_macro_derive(input: TokenStream) -> TokenStream {
     setter_getter::expand_setter(input)
@@ -252,31 +252,66 @@ pub fn getter_macro_derive(input: TokenStream) -> TokenStream {
 }
 
 /// Прямая реализация метода `new`.
-/// 
+///
 /// Макрос поддерживает работу с именованными и неименованными полями.
-/// 
+///
 /// ## Примеры
 /// ```
 /// use std_reset_macros::New;
-/// 
+///
 /// #[derive(New)]
-/// struct Tmp {
-///     first: i32,
-///     second: i32,
-/// }
-/// 
-/// Tmp::new(2, 3);
+/// struct Tmp(i32);
+///
+/// Tmp::new(2);
 /// ```
 /// ```
 /// # use std_reset_macros::New;
 /// #
 /// #[derive(New)]
-/// struct Tmp(i32, i32);
-/// 
+/// struct Tmp<T>(T, i32) where T: Default;
+///
 /// Tmp::new((2, 3));
 /// ```
+/// ```
+/// # use std_reset_macros::New;
+/// #
+/// #[derive(New)]
+/// struct Tmp<T> {
+///     first: i32,
+///     second: T,
+/// }
+///
+/// Tmp::new(2, 3);
+/// ```
 #[proc_macro_derive(New)]
-pub fn  new_macro_derive(input: TokenStream) -> TokenStream {
+pub fn new_macro_derive(input: TokenStream) -> TokenStream {
     new::expand(input)
 }
 mod new;
+
+/// Реализация по умолчанию [`Display`] в качестве [`Debug`](https://doc.rust-lang.org/std/fmt/trait.Debug.html#tymethod.fmt).
+/// 
+/// Струкутура, которая реализует [`Debug`] реализует `Display` по умолчанию, выводя строку формата [`debug::fmt`](https://doc.rust-lang.org/std/fmt/trait.Debug.html#tymethod.fmt).
+/// 
+/// ## Пример
+/// ```
+/// use std_reset_macros::Display;
+/// use std::fmt::Debug;
+/// 
+/// #[derive(Display, Debug, Clone, Copy)]
+/// struct Exmpl(i32);
+/// #
+/// # let exmpl = Exmpl(0);
+/// # assert_eq!(format!("{}", exmpl), format!("{:?}", exmpl));
+/// ```
+#[proc_macro_derive(Display)]
+pub fn display(input: TokenStream) -> TokenStream {
+    display::expand(input)
+}
+mod display;
+
+#[proc_macro_attribute]
+pub fn any_type(attr: TokenStream, item: TokenStream) -> TokenStream {
+    any_type::expand(attr, item)
+}
+mod any_type;

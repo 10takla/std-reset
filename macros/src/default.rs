@@ -1,10 +1,15 @@
+use crate::shared::{get_segment_from_type, type_from_args};
 use proc_macro::TokenStream;
 use quote::quote;
-use crate::shared::{get_segment_from_type, tmp};
 use syn::{parse_macro_input, Field, Fields, FieldsNamed, ItemStruct, PathSegment};
 
 pub fn expand(input: TokenStream) -> TokenStream {
-    let ItemStruct { ident, fields, .. } = parse_macro_input!(input);
+    let ItemStruct {
+        ident,
+        fields,
+        generics,
+        ..
+    } = parse_macro_input!(input);
     let get_default_value = |field: &Field| {
         let Field { ty, .. } = field;
         field
@@ -50,8 +55,10 @@ pub fn expand(input: TokenStream) -> TokenStream {
         _ => panic!("Struct must have named or unnamed fields"),
     };
 
+    let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
+
     quote! {
-        impl std::default::Default for #ident {
+        impl #impl_generics std::default::Default #ty_generics for #ident #where_clause {
             fn default() -> Self {
                 Self #body
             }
