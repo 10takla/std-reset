@@ -5,7 +5,7 @@ use syn::{
     parse_macro_input, Field, Fields, FieldsNamed, FieldsUnnamed, Ident, ItemStruct, PathSegment,
     Type,
 };
-use crate::shared::fast_impl;
+use macro_functions::fast_impl;
 
 pub fn expand(
     input: TokenStream,
@@ -34,11 +34,11 @@ pub fn expand(
                 impl_(ty, ident, setter_ident)
             };
             let [mut is_include, mut is_exclude] = [false; 2];
-            attrs.into_iter().for_each(|syn::Attribute { path, .. }| {
-                if (path.is_ident(&format!("include_{attr_prefix}ter"))) {
+            attrs.into_iter().for_each(|syn::Attribute { meta, .. }| {
+                if (meta.path().is_ident(&format!("include_{attr_prefix}ter"))) {
                     is_include = true
                 }
-                if (path.is_ident(&format!("exclude_{attr_prefix}ter"))) {
+                if (meta.path().is_ident(&format!("exclude_{attr_prefix}ter"))) {
                     is_exclude = true
                 }
             });

@@ -4,7 +4,7 @@ use proc_macro::TokenStream;
 use quote::{format_ident, quote, ToTokens};
 use syn::{parse_macro_input, Fields, FieldsNamed, FieldsUnnamed, ItemStruct};
 
-use crate::shared::fast_impl;
+use macro_functions::fast_impl;
 
 pub fn expand(input: TokenStream) -> TokenStream {
     let struct_ = &parse_macro_input!(input);

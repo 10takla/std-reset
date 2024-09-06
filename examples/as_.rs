@@ -1,4 +1,4 @@
-#![feature(marker_trait_attr)]
+#![allow(unused)]
 
 use std::f32::consts::PI;
 use std::fmt::Debug;

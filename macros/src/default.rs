@@ -1,4 +1,4 @@
-use crate::shared::{get_segment_from_type, type_from_args};
+use macro_functions::{get_segment_from_type, type_from_args};
 use proc_macro::TokenStream;
 use quote::{quote, ToTokens};
 use syn::{
@@ -20,7 +20,7 @@ pub fn expand(input: TokenStream) -> TokenStream {
             .attrs
             .iter()
             .find_map(|attr| {
-                attr.path.is_ident("default").then(|| {
+                attr.path().is_ident("default").then(|| {
                     attr.parse_args::<syn::LitStr>()
                         .map(|default_value| {
                             default_value
@@ -79,7 +79,7 @@ pub fn expand(input: TokenStream) -> TokenStream {
             }
         }
     });
-    
+
     quote! {
         impl #generics std::default::Default for #ident #ty_generics #where_clause {
             fn default() -> Self {

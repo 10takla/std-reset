@@ -6,11 +6,17 @@ keywords = ["std", "reset"]
 license = "MIT"
 name = "std-reset"
 repository = "https://github.com/10takla/std-reset"
-version = "0.1.4"
+version = "0.1.5"
 
 [dependencies]
 paste = "1.0.15"
+proc-macro2 = {version = "1.0.80", optional = true}
+quote = {version = "1.0", optional = true}
 std-reset-macros = {version = "0.1.4", path = "macros"}
+syn = {version = "2.0.74", features = ["full", "extra-traits"], optional = true}
+
+[features]
+macro_functions = ["proc-macro2", "quote", "syn"]
 
 [workspace]
-members = ["macros"]
+members = ["macro_functions", "macros"]

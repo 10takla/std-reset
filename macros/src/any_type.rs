@@ -1,6 +1,6 @@
 use std::ops::Deref;
 
-use crate::shared::{get_segment, get_segment_from_type, type_from_args};
+use macro_functions::{get_segment, get_segment_from_type, type_from_args};
 use proc_macro::TokenStream;
 use quote::{quote, ToTokens};
 use syn::{parse_macro_input, ItemImpl, Type, TypeArray};

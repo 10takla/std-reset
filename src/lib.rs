@@ -1,5 +1,4 @@
-#![feature(negative_impls)]
-#![feature(marker_trait_attr)]
+#![allow(unused)]
 
 pub mod traits;
 
@@ -14,7 +13,6 @@ pub mod prelude {
 
 mod turbo {
     use std::{collections::VecDeque, sync::atomic::AtomicPtr, thread::Thread};
-
     use std_reset_macros::{Default, New};
 
     #[test]

@@ -2,7 +2,7 @@ use proc_macro::TokenStream;
 use quote::quote;
 use syn::{parse_macro_input, ItemStruct};
 
-use crate::shared::fast_impl;
+use macro_functions::fast_impl;
 
 pub fn expand(item: TokenStream) -> TokenStream {
     let struct_: ItemStruct = parse_macro_input!(item);

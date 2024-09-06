@@ -1,4 +1,4 @@
-use crate::shared::{get_segment_from_type, type_from_args};
+use macro_functions::{get_segment_from_type, type_from_args};
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::{parse_macro_input, Field, Fields, FieldsNamed, FieldsUnnamed, ItemStruct, PathSegment};
@@ -18,7 +18,7 @@ pub fn expand(input: TokenStream) -> TokenStream {
                 let deref_fields = unnamed
                     .iter()
                     .enumerate()
-                    .filter(|(i, field)| field.attrs.iter().any(|attr| attr.path.is_ident("deref")))
+                    .filter(|(i, field)| field.attrs.iter().any(|attr| attr.path().is_ident("deref")))
                     .collect::<Vec<_>>();
 
                 if deref_fields.len() > 1 {
@@ -39,7 +39,7 @@ pub fn expand(input: TokenStream) -> TokenStream {
         Fields::Named(FieldsNamed { named, .. }) => {
             let deref_fields = named
                 .iter()
-                .filter(|field| field.attrs.iter().any(|attr| attr.path.is_ident("deref")))
+                .filter(|field| field.attrs.iter().any(|attr| attr.path().is_ident("deref")))
                 .collect::<Vec<_>>();
             if deref_fields.len() > 1 {
                 panic!("only one field can be marked with the attribute #[deref]");

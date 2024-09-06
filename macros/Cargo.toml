@@ -10,8 +10,9 @@ repository = "https://github.com/10takla/std-reset/macros"
 [dependencies]
 proc-macro2 = "1.0.80"
 quote = "1.0"
-syn = {version = "1.0", features = ["full", "extra-traits"]}
+syn = {version = "2.0.74", features = ["full", "extra-traits"]}
 paste = "1.0.15"
+macro_functions = { path = "../macro_functions" }
 
 [lib]
 proc-macro = true

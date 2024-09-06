@@ -1,11 +1,9 @@
 #![allow(unused)]
 
-mod shared;
-
 use paste::paste;
 use proc_macro::TokenStream;
 use quote::quote;
-use shared::{get_segment_from_type, type_from_args};
+use macro_functions::{get_segment_from_type, type_from_args};
 use syn::{parse_macro_input, Field, Fields, FieldsNamed, FieldsUnnamed, ItemStruct, PathSegment};
 
 /// Реализация трейта [`Default`] с указанием значений по умолчанию для каждого поля структуры.
