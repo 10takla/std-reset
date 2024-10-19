@@ -7,18 +7,18 @@ fn deref_every_type_structure() {
     assert_eq!(*Wrapper1(1), 1);
 
     #[derive(Debug, Deref)]
-    struct Wrapper2(pub i32, #[deref] pub &'static str);
-    assert_eq!(*Wrapper2(1, "1"), "1");
+    struct Wrapper2((), #[deref] pub &'static str);
+    assert_eq!(*Wrapper2((), "1"), "1");
 
     #[derive(Debug, Deref)]
     struct Wrapper3 {
-        pub first: i32,
+        pub _first: i32,
         #[deref]
         pub second: &'static str,
     }
     assert_eq!(
         *Wrapper3 {
-            first: 1,
+            _first: 1,
             second: "1"
         },
         "1"

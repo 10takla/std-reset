@@ -4,14 +4,14 @@ use std_reset_macros::Default;
 fn for_named_structure() {
     #[derive(Debug, Default, PartialEq)]
     struct User {
-        #[default("String::from(\"Ferris\")")]
+        #[default(String::from("Ferris"))]
         name: String,
-        #[default("String::from(\"123FerF\")")]
+        #[default(String::from("123FerF"))]
         password: String,
-        #[default("8_9999_999_999")]
+        #[default(8_9999_999_999)]
         number: u128,
         email: Option<String>,
-        #[default("Some(32)")]
+        #[default(Some(32))]
         age: Option<u32>,
     }
     assert_eq!(
@@ -30,11 +30,11 @@ fn for_named_structure() {
 fn for_tuple_structure() {
     #[derive(Debug, Default, PartialEq)]
     struct User(
-        #[default("String::from(\"Ferris\")")] String,
-        #[default("String::from(\"123FerF\")")] String,
-        #[default("8_9999_999_999")] u128,
+        #[default(String::from("Ferris"))] String,
+        #[default(String::from("123FerF"))] String,
+        #[default(8_9999_999_999)] u128,
         Option<String>,
-        #[default("Some(32)")] Option<u32>,
+        #[default(Some(32))] Option<u32>,
     );
     assert_eq!(
         User::default(),

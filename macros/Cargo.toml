@@ -1,18 +1,18 @@
 [package]
 edition = "2021"
 name = "std-reset-macros"
-version = "0.1.4"
+version = "0.1.5"
 license = "MIT"
 description = "Procedural macros for std-reset library."
 keywords = ["std", "reset", "macros"]
 repository = "https://github.com/10takla/std-reset/macros"
 
 [dependencies]
-proc-macro2 = "1.0.80"
-quote = "1.0"
-syn = {version = "2.0.74", features = ["full", "extra-traits"]}
+proc-macro2 = { workspace = true }
+quote = { workspace = true }
+syn = { workspace = true }
 paste = "1.0.15"
-macro_functions = { path = "../macro_functions" }
+macro_functions = { version = "^0.1.0", path = "../macro_functions" }
 
 [lib]
 proc-macro = true

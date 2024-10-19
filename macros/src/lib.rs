@@ -15,7 +15,7 @@ use syn::{parse_macro_input, Field, Fields, FieldsNamed, FieldsUnnamed, ItemStru
 /// # use std_reset_macros::Default;
 /// # #[derive(Debug, Default, PartialEq)]
 /// # struct Wrap<T>(
-/// #[default("10_i32")]
+/// #[default(10_i32)]
 /// #   i32,
 ///     T
 /// # );
@@ -31,7 +31,7 @@ use syn::{parse_macro_input, Field, Fields, FieldsNamed, FieldsUnnamed, ItemStru
 /// # use std_reset_macros::Default;
 /// # #[derive(Debug, Default, PartialEq)]
 /// # struct Wrap(
-/// #[default("\"crab\"")]
+/// #[default("crab")]
 /// #   &'static str
 /// # );
 /// ```
@@ -44,14 +44,14 @@ use syn::{parse_macro_input, Field, Fields, FieldsNamed, FieldsUnnamed, ItemStru
 ///
 /// #[derive(Debug, Default, PartialEq)]
 /// struct User {
-///     #[default("String::from(\"Ferris\")")]
+///     #[default(String::from("Ferris"))]
 ///     name: String,
-///     #[default("String::from(\"123FerF\")")]
+///     #[default(String::from("123FerF"))]
 ///     password: String,
-///     #[default("8_9999_999_999")]
+///     #[default(8_9999_999_999)]
 ///     number: u128,
 ///     email: Option<String>,
-///     #[default("Some(32)")]
+///     #[default(Some(32))]
 ///     age: Option<u32>,
 /// }
 ///
@@ -72,11 +72,11 @@ use syn::{parse_macro_input, Field, Fields, FieldsNamed, FieldsUnnamed, ItemStru
 /// #
 /// #[derive(Debug, Default, PartialEq)]
 /// struct User(
-///     #[default("String::from(\"Ferris\")")] String,
-///     #[default("String::from(\"123FerF\")")] String,
-///     #[default("8_9999_999_999")] u128,
+///     #[default(String::from("Ferris"))] String,
+///     #[default(String::from("123FerF"))] String,
+///     #[default(8_9999_999_999)] u128,
 ///     Option<String>,
-///     #[default("Some(32)")] Option<u32>,
+///     #[default(Some(32))] Option<u32>,
 /// );
 ///
 /// assert_eq!(

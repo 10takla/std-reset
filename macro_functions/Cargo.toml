@@ -2,8 +2,15 @@
 name = "macro_functions"
 version = "0.1.0"
 edition = "2021"
+license = "MIT"
+description = "Utility functions for quickly parsing syn structures"
+keywords = ["syn", "macros"]
+repository = "https://github.com/10takla/std-reset/macro_functions"
 
 [dependencies]
-proc-macro2 = "1.0.80"
-quote = "1.0"
-syn = {version = "2.0.74", features = ["full", "extra-traits"]}
+proc-macro2 = {workspace = true}
+quote = {workspace = true}
+syn = {workspace = true}
+
+[features]
+unstable = []

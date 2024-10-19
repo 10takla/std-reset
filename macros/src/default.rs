@@ -2,8 +2,7 @@ use macro_functions::{get_segment_from_type, type_from_args};
 use proc_macro::TokenStream;
 use quote::{quote, ToTokens};
 use syn::{
-    parse_macro_input, parse_str, Field, Fields, FieldsNamed, GenericParam, ItemStruct, Path,
-    PathSegment, TraitBound, TypeParam, TypeParamBound,
+    parse_macro_input, parse_str, Field, Fields, FieldsNamed, GenericParam, ItemStruct, Meta, Path, PathSegment, TraitBound, TypeParam, TypeParamBound
 };
 
 pub fn expand(input: TokenStream) -> TokenStream {
@@ -21,14 +20,10 @@ pub fn expand(input: TokenStream) -> TokenStream {
             .iter()
             .find_map(|attr| {
                 attr.path().is_ident("default").then(|| {
-                    attr.parse_args::<syn::LitStr>()
-                        .map(|default_value| {
-                            default_value
-                                .value()
-                                .parse::<proc_macro2::TokenStream>()
-                                .expect("Failed to parse tokens")
-                        })
-                        .expect("Failed to parse default value")
+                    let Meta::List(list) = &attr.meta else {
+                        unreachable!()
+                    };
+                    list.tokens.clone()
                 })
             })
             .unwrap_or_else(|| {
