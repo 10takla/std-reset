@@ -1,23 +1,23 @@
 #![allow(unused)]
 
+use macro_functions::{get_segment_from_type, type_from_args};
 use paste::paste;
 use proc_macro::TokenStream;
 use quote::quote;
-use macro_functions::{get_segment_from_type, type_from_args};
 use syn::{parse_macro_input, Field, Fields, FieldsNamed, FieldsUnnamed, ItemStruct, PathSegment};
 
 /// Реализация трейта [`Default`] с указанием значений по умолчанию для каждого поля структуры.
 ///
-/// Макрос поддерживает работу с именованными и неименнованными структурами.
+/// Макрос поддерживает работу со всеми видами стурктур и перечислений, кроме _zero-variant_ перечислений.
 ///
-/// Чтобы указать дефолтное значение поля необходимо использовать атрибут `default` со следующим синтаксисом:
+/// Чтобы указать дефолтное значение поля необходимо использовать атрибут `#[default]` с следующим синтаксисом:
 /// ```
 /// # use std_reset_macros::Default;
 /// # #[derive(Debug, Default, PartialEq)]
 /// # struct Wrap<T>(
 /// #[default(10_i32)]
 /// #   i32,
-///     T
+/// #   T
 /// # );
 /// ```
 /// -- выражение, которое будет подставляться в поле как его дефолтное значение указывается внутри скобок и описан как строковый литерал.
@@ -37,58 +37,114 @@ use syn::{parse_macro_input, Field, Fields, FieldsNamed, FieldsUnnamed, ItemStru
 /// ```
 ///
 /// # Примеры
-/// Структура с _именнованными_ полями:
+/// ### 1. Структуры
+/// - с _именнованными_ полями:
 ///
 /// ```
 /// use std_reset_macros::Default;
 ///
 /// #[derive(Debug, Default, PartialEq)]
-/// struct User {
+/// struct Named {
 ///     #[default(String::from("Ferris"))]
-///     name: String,
-///     #[default(String::from("123FerF"))]
-///     password: String,
+///     first: String,
+///     #[default("Ferris")]
+///     second: &'static str,
 ///     #[default(8_9999_999_999)]
-///     number: u128,
-///     email: Option<String>,
+///     third: u128,
+///     fourth: Option<String>,
 ///     #[default(Some(32))]
-///     age: Option<u32>,
+///     fifth: Option<u32>,
 /// }
-///
 /// assert_eq!(
-///     User::default(),
-///     User {
-///         name: "Ferris".to_string(),
-///         password: "123FerF".to_string(),
-///         number: 8_9999_999_999,
-///         email: None,
-///         age: Some(32),
+///     Named::default(),
+///     Named {
+///         first: "Ferris".to_string(),
+///         second: "Ferris",
+///         third: 8_9999_999_999,
+///         fourth: None,
+///         fifth: Some(32),
 ///     }
 /// );
 /// ```
-/// Структура с _неименнованными_ полями:
+/// - с _неименнованными_ полями:
 /// ```
 /// # use std_reset_macros::Default;
 /// #
 /// #[derive(Debug, Default, PartialEq)]
-/// struct User(
+/// struct Unnamed(
 ///     #[default(String::from("Ferris"))] String,
-///     #[default(String::from("123FerF"))] String,
+///     #[default("Ferris")] &'static str,
 ///     #[default(8_9999_999_999)] u128,
 ///     Option<String>,
 ///     #[default(Some(32))] Option<u32>,
 /// );
-///
 /// assert_eq!(
-///     User::default(),
-///     User(
+///     Unnamed::default(),
+///     Unnamed(
 ///         "Ferris".to_string(),
-///         "123FerF".to_string(),
+///         "Ferris",
 ///         8_9999_999_999,
 ///         None,
 ///         Some(32),
 ///     )
 /// );
+/// ```
+/// - _unit-like_ структура:
+/// ```
+/// # use std_reset_macros::Default;
+/// # 
+/// #[derive(Debug, Default, PartialEq)]
+/// struct Unit;
+/// assert_eq!(Unit::default(), Unit);
+/// ```
+/// 
+/// ### 2. Перечисления
+/// - unit-like:
+/// ```
+/// # use std_reset_macros::Default;
+/// # 
+/// #[derive(Default, PartialEq, Debug)]
+/// enum Units {
+///     #[default]
+///     One,
+///     Two,
+/// }
+/// assert_eq!(Units::default(), Units::One);
+/// ```
+/// - tuple-like:
+/// ```
+/// # use std_reset_macros::Default;
+/// # 
+/// #[derive(Default, PartialEq, Debug)]
+/// enum Unnamed {
+///     #[default]
+///     One(#[default(10)] i32),
+///     Two,
+/// }
+/// assert_eq!(Unnamed::default(), Unnamed::One(10));
+/// ```
+/// - struct-like:
+/// ```
+/// # use std_reset_macros::Default;
+/// # 
+/// #[derive(Default, PartialEq, Debug)]
+/// enum Named {
+///     One,
+///     #[default]
+///     Two {
+///         #[default(UnnamedStruct)]
+///         first: UnnamedStruct,
+///     },
+/// }
+/// assert_eq!(
+///     Named::default(),
+///     Named::Two {
+///         first: UnnamedStruct
+///     }
+/// );
+/// 
+/// #[derive(PartialEq, Debug)]
+/// struct UnnamedStruct;
 /// ```
 #[proc_macro_derive(Default, attributes(default))]
 pub fn default_macro_derive(input: TokenStream) -> TokenStream {
@@ -289,14 +345,14 @@ pub fn new_macro_derive(input: TokenStream) -> TokenStream {
 mod new;
 
 /// Реализация по умолчанию [`Display`] в качестве [`Debug`](https://doc.rust-lang.org/std/fmt/trait.Debug.html#tymethod.fmt).
-/// 
+///
 /// Струкутура, которая реализует [`Debug`] реализует `Display` по умолчанию, выводя строку формата [`debug::fmt`](https://doc.rust-lang.org/std/fmt/trait.Debug.html#tymethod.fmt).
-/// 
+///
 /// ## Пример
 /// ```
 /// use std_reset_macros::Display;
 /// use std::fmt::Debug;
-/// 
+///
 /// #[derive(Display, Debug, Clone, Copy)]
 /// struct Exmpl(i32);
 /// #
