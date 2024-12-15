@@ -2,8 +2,8 @@ use macro_functions::{get_segment_from_type, type_from_args};
 use proc_macro::TokenStream;
 use quote::{quote, ToTokens};
 use syn::{
-    parse_macro_input, parse_str, Field, Fields, FieldsNamed, GenericParam, ItemEnum, ItemStruct,
-    Meta, Path, PathSegment, TraitBound, TypeParam, TypeParamBound,
+    parse, parse2, parse_macro_input, parse_str, Field, Fields, FieldsNamed, GenericParam,
+    Generics, ItemEnum, ItemStruct, Meta, Path, PathSegment, TraitBound, TypeParam, TypeParamBound,
 };
 
 pub fn expand(input: TokenStream) -> TokenStream {
@@ -56,9 +56,9 @@ pub fn expand(input: TokenStream) -> TokenStream {
                 Fields::Unit => proc_macro2::TokenStream::default(),
             };
 
-            let (_, ty_generics, where_clause) = generics.split_for_impl();
+            let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
 
-            let mut generics = generics.clone();
+            let mut generics = parse2::<Generics>(impl_generics.to_token_stream()).unwrap();
 
             generics.params.iter_mut().for_each(|type_| {
                 if let GenericParam::Type(type_param) = type_ {
@@ -76,7 +76,7 @@ pub fn expand(input: TokenStream) -> TokenStream {
                     }
                 }
             });
-
+            
             quote! {
                 impl #generics std::default::Default for #ident #ty_generics #where_clause {
                     fn default() -> Self {

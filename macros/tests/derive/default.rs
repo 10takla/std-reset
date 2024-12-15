@@ -62,7 +62,7 @@ fn unit_structure() {
 #[test]
 fn with_generics() {
     #[derive(Debug, Default, PartialEq)]
-    struct Data<A, B, C, D>(A, B, C, D);
+    struct Data<A, B, C, D = i32>(A, B, C, D);
     assert_eq!(Data::<i32, i64, i128, usize>::default(), Data(0, 0, 0, 0));
 }
 
